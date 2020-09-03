@@ -1,0 +1,66 @@
+version: '3'
+
+services:
+    # Agents
+
+    bokjiro-agent:
+        command: ['bokjiro --port 8000']
+        build:
+            context: https://github.com/petridishdev/aries-cloudagent-python.git#openapi-demo
+            dockerfile: ./docker/Dockerfile.demo
+        ports:
+            - 8000-8007:8000-8007
+        networks:
+            - aca
+        environment:
+            - RUNMODE=${RUNMODE}
+            - DOCKERHOST=${DOCKERHOST}
+            - LEDGER_URL=${LEDGER_URL}
+            - GENESIS_URL=${GENESIS_URL}
+        tty: true
+    ministry-of-welfare-agent:
+        command: ['ministry-of-welfare --port 8010']
+        build:
+            context: https://github.com/petridishdev/aries-cloudagent-python.git#openapi-demo
+            dockerfile: ./docker/Dockerfile.demo
+        ports:
+            - 8010-8017:8010-8017
+        networks:
+            - aca
+        environment:
+            - RUNMODE=${RUNMODE}
+            - DOCKERHOST=${DOCKERHOST}
+            - LEDGER_URL=${LEDGER_URL}
+            - GENESIS_URL=${GENESIS_URL}
+        tty: true
+
+    # Controllers
+    bokjiro-controller:
+        build:
+            context: ../controllers/bokjiro-controller/
+            args:
+                - RUNMODE=${RUNMODE}
+                - BOKJIRO_AGENT_HOST=${BOKJIRO_AGENT_HOST}
+        ports:
+            - 9031:80
+        networks:
+            - aca
+        depends_on:
+            - bokjiro-agent
+
+
+    ministry-of-welfare-controller:
+        build:
+                    context: ../controllers/ministry-of-welfare-controller/
+                ports:
+                    - 9041:3000
+                networks:
+                    - aca
+                depends_on:
+                    - ministry-of-welfare-agent
+                environment:
+                    - RUNMODE=${RUNMODE}
+                    - MINISTRY_OF_WELFARE_HOST=${MINISTRY_OF_WELFARE_HOST}        
+
+networks:
+    aca:
